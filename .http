@@ -1,0 +1,172 @@
+@baseUrl = http://localhost:3000
+@token = EAALS5fqLVh8BPFBzGKKmKpyuNi4dZC7AZBzSZADAbvOLWyaIaXVHm0ljMe7ZBZCaK2PyxgaTxbzDqvGeDThy2ZBlwo49kSGuc0Vs0Euv1r4L3okQyhqnQ7wMH7nh62Afomne4RJi8vXpjxku4XBIoPO1PENKDauxDv8AQWteGFDkv329WfipdvHL70EirmTgZDZD
+@phoneId = 743581855509318 
+#726909047167471
+@to = 27790985214
+
+
+# ➤ Verify webhook challenge
+GET {{baseUrl}}/webhook?hub.mode=subscribe&hub.verify_token=vibecode&hub.challenge=CHALLENGE_TOKEN HTTP/1.1
+
+
+
+####
+# ➤ Simulate incoming message webhook
+POST http://localhost:3000/webhook HTTP/1.1
+Content-Type: application/json
+
+{
+  "entry": [
+    {
+      "changes": [
+        { 
+          "value": { 
+            "messages": [
+              {
+                "from": "{{to}}",
+                "text": { "body": " I want to cancel an appointment" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+####
+# ➤ Simulate incoming message webhook
+POST http://localhost:3000/webhook HTTP/1.1
+Content-Type: application/json
+
+{
+  "entry": [
+    {
+      "changes": [
+        { 
+          "value": { 
+            "messages": [
+              {
+                "from": "{{to}}",
+                "text": { "body": "Hi" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+
+####
+# ➤ Simulate incoming message webhook
+POST http://localhost:3000/webhook HTTP/1.1
+Content-Type: application/json
+
+{
+  "entry": [
+    {
+      "changes": [
+        { 
+          "value": { 
+            "messages": [
+              {
+                "from": "{{to}}",
+                "text": { "body": "7" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+
+### ➤ Send WhatsApp message
+POST https://graph.facebook.com/v19.0/{{phoneId}}/messages HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "messaging_product": "whatsapp",
+  "to": "{{to}}",
+  "type": "text",
+  "text": { "body": "Local test message ✅" }
+}
+
+
+
+###
+GET http://localhost:3000/services
+
+###
+GET http://localhost:3000/services/1
+
+
+
+
+###
+POST http://localhost:3000/services/4/add
+Content-Type: application/json
+
+{
+  "service_Id": 4,
+  "Image": "uploads/mist.jpg"
+}
+
+
+###
+GET http://localhost:3000/hours/1
+
+###
+GET http://localhost:3000/upcoming/appointments/
+
+###
+GET http://localhost:3000/today/appointments/
+
+###
+GET http://localhost:3000/month/appointments/
+
+###
+GET http://localhost:3000/appointments/27790985214
+
+###
+POST http://localhost:3000/new/appointments
+Content-Type: application/json
+
+{
+  "name": "Francinah",
+  "user_number": "27831234567",
+  "serviceId": 1,
+  "date": "2025-10-17",
+  "time": "13:30:00"
+}
+
+###Complete appointment
+POST http://localhost:3000/complete
+Content-Type: application/json
+
+{
+  "user": "0651237890",
+  "appointmentId": 3
+}
+
+###confirm appointment
+POST http://localhost:3000/confirm
+Content-Type: application/json
+
+{
+  "user": "0651237890",
+  "appointmentId": 3
+}
+
+###cancel appointment
+POST http://localhost:3000/cancel
+Content-Type: application/json
+
+{
+  "user": "0651237890",
+  "appointmentId": 3
+}

@@ -1,0 +1,41 @@
+import axios from 'axios';
+
+export const sendTextMessage = async (to, message) => {
+    // Safety check
+    if (!to || typeof to !== 'string') {
+        console.error('❌ Invalid recipient number:', to);
+        return;
+    }
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+        console.error('❌ Invalid or empty message body:', message);
+        return;
+    }
+
+    const payload = {
+        messaging_product: 'whatsapp',
+        to,
+        text: { body: message.trim() }
+    };
+
+    const headers = {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        'Content-Type': 'application/json'
+    };
+
+    try {
+        const response = await axios.post(
+            `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
+            payload,
+            { headers }
+        );
+        console.log('✅ Message sent:', response.data);
+    } catch (err) {
+        console.error('❌ Failed to send message');
+        console.error('Status:', err.response?.status);
+        console.error('Error:', err.response?.data || err.message);
+    }
+};
+
+
+//module.exports = { sendTextMessage }; 
