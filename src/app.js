@@ -259,9 +259,8 @@ app.get('/upcoming/appointments', async (req, res) => {
     FROM appointments AS A
     INNER JOIN services AS S
       ON A.service_id = S.id
-    WHERE 
-      strftime('%Y-%m', A.appointment_date) = strftime('%Y-%m', 'now')
-      AND (A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation')
+    WHERE A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation'
+     
     ORDER BY 
       A.appointment_date, 
       A.appointment_time ASC;`);
@@ -327,6 +326,34 @@ app.get('/month/appointments', async (req, res) => {
   res.json(appts);
 });
 
+
+// get popular services for the current month
+app.get('/month/appointments/popular', async (req, res) => {
+  const appts = await db.all(
+    `SELECT s.name AS service_name, COUNT(a.id) AS total_bookings
+      FROM appointments a
+      JOIN services s ON a.service_id = s.id
+      WHERE strftime('%Y-%m', a.appointment_date) = strftime('%Y-%m', 'now')
+      GROUP BY a.service_id
+      ORDER BY total_bookings DESC;
+`);
+  res.json(appts);
+});
+
+
+// get all the appointments from the current month
+app.get('/month/appointments/repeat-users', async (req, res) => {
+  const appts = await db.all(
+    `SELECT user_number, name, COUNT(*) AS appointment_count
+    FROM appointments
+    WHERE strftime('%Y-%m', appointment_date) = strftime('%Y-%m', 'now')
+      AND status = 'Completed'
+      AND appointment_date <= date('now')
+    GROUP BY user_number, name
+    HAVING COUNT(*) > 1
+`);
+  res.json(appts);
+});
 
 
 //update appointement to completed

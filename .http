@@ -130,6 +130,13 @@ GET http://localhost:3000/today/appointments/
 GET http://localhost:3000/month/appointments/
 
 ###
+GET http://localhost:3000/month/appointments/popular
+
+###
+GET http://localhost:3000/month/appointments/repeat-users
+
+
+###
 GET http://localhost:3000/appointments/27790985214
 
 ###

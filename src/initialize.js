@@ -2,10 +2,12 @@
 // Ensure you have the OpenAI library installed: npm install openai
 import { OpenAI } from "openai";
 import { GoogleGenAI } from '@google/genai';
+import dotenv from 'dotenv';
+dotenv.config();
 
 //set up the OpenAI client with your API key
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: process.env.OPENROUTER_API,
   baseURL: "https://openrouter.ai/api/v1",
 });
 
@@ -24,7 +26,7 @@ async function chat(messages) {
 
 // Set up the Google Gemini client
 const ai = new GoogleGenAI({
-  apiKey: 'AIzaSyDpkqX78mVt_oKql3kpJR1IknrSYNMCaww',
+  apiKey: process.env.GEMINI_API,
 });
 
 // Define the type for chat messages

@@ -1,6 +1,25 @@
 SELECT * FROM appointments;
 
--- DELETE FROM appointments WHERE id > 5;
+--Popular services this month
+SELECT 
+  s.name AS service_name, COUNT(a.id) AS total_bookings
+FROM appointments a
+JOIN services s ON a.service_id = s.id
+WHERE strftime('%Y-%m', a.appointment_date) = strftime('%Y-%m', 'now')
+GROUP BY a.service_id
+ORDER BY total_bookings DESC;
+
+--Repeat customers this month
+
+  SELECT user_number, name, COUNT(*) AS appointment_count
+  FROM appointments
+  WHERE strftime('%Y-%m', appointment_date) = strftime('%Y-%m', 'now')
+    AND status = 'Completed'
+    AND appointment_date <= date('now')
+  GROUP BY user_number, name
+  HAVING COUNT(*) > 1
+
+-- DELETE FROM appointments WHERE id = 21;
 -- this month
 SELECT 
       A.id,
