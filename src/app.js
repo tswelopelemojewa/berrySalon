@@ -17,7 +17,7 @@ app.use('/uploads', express.static('uploads'));
 
 // ✅ Enable CORS for your frontend
 app.use(cors({
-  origin: "*", // Allow your React app // http://berrysalon.onrender.com/, *, http://localhost:5173
+  origin: "http://localhost:5173", // Allow your React app // http://berrysalon.onrender.com/, *, http://localhost:5173
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
