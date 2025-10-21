@@ -16,11 +16,13 @@ app.use('/uploads', express.static('uploads'));
 
 
 // ✅ Enable CORS for your frontend
-app.use(cors({
-  origin: "http://localhost:5173", // Allow your React app // http://berrysalon.onrender.com/, *, http://localhost:5173
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://berrysalon.onrender.com"], // both local & deployed frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 // Meta Webhook verification
 app.get('/webhook', (req, res) => {
