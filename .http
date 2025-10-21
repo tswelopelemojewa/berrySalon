@@ -99,16 +99,16 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET http://localhost:3000/services
+GET https://berrysalon.onrender.com/services
 
 ###
-GET http://localhost:3000/services/1
+GET https://berrysalon.onrender.com/services/1
 
 
 
 
 ###
-POST http://localhost:3000/services/4/add
+POST https://berrysalon.onrender.com/services/4/add
 Content-Type: application/json
 
 {
@@ -118,29 +118,29 @@ Content-Type: application/json
 
 
 ###
-GET http://localhost:3000/hours/1
+GET https://berrysalon.onrender.com/hours/1
 
 ###
-GET http://localhost:3000/upcoming/appointments/
+GET https://berrysalon.onrender.com/upcoming/appointments/
 
 ###
-GET http://localhost:3000/today/appointments/
+GET https://berrysalon.onrender.com/today/appointments/
 
 ###
-GET http://localhost:3000/month/appointments/
+GET https://berrysalon.onrender.com/month/appointments/
 
 ###
-GET http://localhost:3000/month/appointments/popular
+GET https://berrysalon.onrender.com/month/appointments/popular
 
 ###
-GET http://localhost:3000/month/appointments/repeat-users
+GET https://berrysalon.onrender.com/month/appointments/repeat-users
 
 
 ###
-GET http://localhost:3000/appointments/27790985214
+GET https://berrysalon.onrender.com/appointments/27790985214
 
 ###
-POST http://localhost:3000/new/appointments
+POST https://berrysalon.onrender.com/new/appointments
 Content-Type: application/json
 
 {
@@ -152,7 +152,7 @@ Content-Type: application/json
 }
 
 ###Complete appointment
-POST http://localhost:3000/complete
+POST https://berrysalon.onrender.com/complete
 Content-Type: application/json
 
 {
@@ -161,7 +161,7 @@ Content-Type: application/json
 }
 
 ###confirm appointment
-POST http://localhost:3000/confirm
+POST https://berrysalon.onrender.com/confirm
 Content-Type: application/json
 
 {
@@ -170,7 +170,7 @@ Content-Type: application/json
 }
 
 ###cancel appointment
-POST http://localhost:3000/cancel
+POST https://berrysalon.onrender.com/cancel
 Content-Type: application/json
 
 {
