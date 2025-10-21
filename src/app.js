@@ -18,7 +18,7 @@ app.use('/uploads', express.static('uploads'));
 // ✅ Enable CORS for your frontend
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://berrysalon.onrender.com", "http://berrysalon.onrender.com/services"], // both local & deployed frontend
+    origin: ["http://localhost:5173", "https://berrysalon.onrender.com"], // both local & deployed frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -353,6 +353,7 @@ app.get('/month/appointments/repeat-users', async (req, res) => {
       AND appointment_date <= date('now')
     GROUP BY user_number, name
     HAVING COUNT(*) > 1
+    ORDER BY appointment_count DESC;
 `);
   res.json(appts);
 });

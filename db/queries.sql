@@ -250,3 +250,7 @@ SET service_id = 4
 WHERE user_number = '27790985214' 
   AND appointment_time = '2025-07-25T12:00:00';
 
+
+-- DELETE FROM appointments
+-- WHERE user_number = '27790985214' 
+--   AND appointment_time = '2025-07-25T12:00:00';
