@@ -1,0 +1,5 @@
+curl -i -X POST `
+  https://graph.facebook.com/v22.0/743581855509318/messages `
+  -H 'Authorization: Bearer EAAUDMz1TlqUBP0HG5ZBqh79rDJs4ZCzSU6EHvUJGUmsPSjZCKxLTbO9r7aZADHZBO40lftyhZBNGNDfbpZALaX9N8zPEK3jyqRw417LZC0AuZBcXv3ZCocl8U9LdxhqBSmmZBXmu0LJmKAOzkRrM0lZAJzmrRyurn2ZA2QjCtvRzZCAq6OtF6HeHiYWhh76r4VAauqkfLfpkwKVQ4akXeAbXSDbcZAihOQnt4bMTcFQ3s4L9kwYZCwjY7KpDKWxNXZBNd6tFJ2585ASphcTjaAaR8kvhdLaS0ZBPj2bqeKKlEGLAZDZD' `
+  -H 'Content-Type: application/json' `
+  -d '{ \"messaging_product\": \"whatsapp\", \"to\": \"27790985214\", \"type\": \"template\", \"template\": { \"name\": \"hello_world\", \"language\": { \"code\": \"en_US\" } } }'

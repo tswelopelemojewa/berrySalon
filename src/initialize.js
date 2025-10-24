@@ -6,19 +6,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 //set up the OpenAI client with your API key
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API,
-  baseURL: "https://openrouter.ai/api/v1",
-});
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENROUTER_API,
+//   baseURL: "https://openrouter.ai/api/v1",
+// });
 
-// Define the type for chat messages
-async function chat(messages) {
-  const res = await openai.chat.completions.create({
-    model: "deepseek/deepseek-r1-distill-llama-70b:free",
-    messages,
-  });
-  return res.choices?.[0]?.message?.content;
-}
+// // Define the type for chat messages
+// async function chat(messages) {
+//   const res = await openai.chat.completions.create({
+//     model: "deepseek/deepseek-r1-distill-llama-70b:free",
+//     messages,
+//   });
+//   return res.choices?.[0]?.message?.content;
+// }
 
 
 
@@ -30,12 +30,12 @@ const ai = new GoogleGenAI({
 });
 
 // Define the type for chat messages
-// async function chat(messages) {
-//   const res = await ai.models.generateContent({
-//     model: 'gemini-2.5-pro-preview-03-25',
-//     contents: messages.map(msg => msg.content).join('\n'),
-//   });
-//   return res.text;
-// }
+async function chat(messages) {
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-lite',
+    contents: messages.map(msg => msg.content).join('\n'),
+  });
+  return res.text;
+}
 
 export { chat };
