@@ -258,263 +258,432 @@ app.post("/services/:id/add", upload.array("images"), async (req, res) => {
   }
 });
 
-app.get('/hours/:dow', async (req, res) => {
-  const dow = parseInt(req.params.dow);
-  const hours = await db.get(
-    'SELECT * FROM operating_hours WHERE day_of_week = ?', dow
-  );
-  res.json(hours);
-});
+
+// app.get('/hours/:dow', async (req, res) => {
+//   const dow = parseInt(req.params.dow);
+//   const hours = await db.get(
+//     'SELECT * FROM operating_hours WHERE day_of_week = ?', dow
+//   );
+//   res.json(hours);
+// });
 
 
-// get all the appointments for a user
-app.get('/appointments/:user_number', async (req, res) => {
-  const appts = await db.all(
-    `SELECT * FROM appointments
-     WHERE user_number = ?
-     AND appointment_time >= datetime('now', 'localtime')
-     AND (status = 'confirmed' OR status = 'Pending')
-     ORDER BY appointment_time ASC;`,
-    [req.params.user_number]
-  );
-  res.json(appts);
-});
+// // get all the appointments for a user
+// app.get('/appointments/:user_number', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT * FROM appointments
+//      WHERE user_number = ?
+//      AND appointment_time >= datetime('now', 'localtime')
+//      AND (status = 'confirmed' OR status = 'Pending')
+//      ORDER BY appointment_time ASC;`,
+//     [req.params.user_number]
+//   );
+//   res.json(appts);
+// });
 
 // create a new appointment
 // Create a new appointment
+// app.post('/new/appointments', async (req, res) => {
+//   const { name, user_number, serviceId, date, time } = req.body;
+
+//   try {
+//     // Step 1: Check for overlapping appointment
+//     const existing = await db.get(
+//       `
+//       SELECT 1
+//       FROM appointments AS A
+//       INNER JOIN services AS S
+//           ON A.service_id = S.id
+//       LEFT JOIN services AS S2
+//           ON S2.id = ?
+//       WHERE A.appointment_date = date(?)
+//         AND (
+//               -- Case 1: New start overlaps existing
+//               (time(datetime(? || ' ' || ?)) >= time(A.appointment_time)
+//               AND time(datetime(? || ' ' || ?)) < time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')))
+
+//               OR
+
+//               -- Case 2: New end overlaps existing
+//               (time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')) > time(A.appointment_time)
+//               AND time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')) <= time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')))
+
+//               OR
+
+//               -- Case 3: New appointment completely overlaps existing
+//               (time(A.appointment_time) BETWEEN time(datetime(? || ' ' || ?))
+//               AND time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')))
+//             )
+//         AND (A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation');
+//       LIMIT 1;
+
+//       `,
+//       // Parameters for all placeholders (9 total)
+//       [
+//         serviceId,        // S2.id = ?
+//         date,             // A.appointment_date = date(?)
+//         date, time,       // datetime(? || ' ' || ?)
+//         date, time,       // datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')
+//         date, time,       // datetime(? || ' ' || ?)
+//         date, time        // datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')
+//       ]
+//     );
+
+//     // Step 2: Return error if conflict found
+//     if (existing) {
+//       return res.status(400).json({ error: 'That appointment slot has already been booked.' });
+//     }
+
+//     // Step 3: Insert new appointment
+//     const result = await db.run(
+//       `
+//       INSERT INTO appointments 
+//         (name, user_number, service_id, appointment_date, appointment_time, status) 
+//       VALUES (?, ?, ?, ?, ?, 'Awaiting Confirmation')
+//       `,
+//       [name, user_number, serviceId, date, time]
+//     );
+
+//     res.status(201).json({ id: result.lastID, message: 'Appointment created successfully.' });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
+
+
 app.post('/new/appointments', async (req, res) => {
   const { name, user_number, serviceId, date, time } = req.body;
 
   try {
-    // Step 1: Check for overlapping appointment
-    const existing = await db.get(
-      `
-      SELECT 1
-      FROM appointments AS A
-      INNER JOIN services AS S
-          ON A.service_id = S.id
-      LEFT JOIN services AS S2
-          ON S2.id = ?
-      WHERE A.appointment_date = date(?)
-        AND (
-              -- Case 1: New start overlaps existing
-              (time(datetime(? || ' ' || ?)) >= time(A.appointment_time)
-              AND time(datetime(? || ' ' || ?)) < time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')))
+    // Check overlap manually using Supabase
+    const { data: existing, error: overlapError } = await supabase
+      .rpc('check_appointment_overlap', { service_id_input: serviceId, date_input: date, time_input: time });
 
-              OR
-
-              -- Case 2: New end overlaps existing
-              (time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')) > time(A.appointment_time)
-              AND time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')) <= time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')))
-
-              OR
-
-              -- Case 3: New appointment completely overlaps existing
-              (time(A.appointment_time) BETWEEN time(datetime(? || ' ' || ?))
-              AND time(datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')))
-            )
-        AND (A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation');
-      LIMIT 1;
-
-      `,
-      // Parameters for all placeholders (9 total)
-      [
-        serviceId,        // S2.id = ?
-        date,             // A.appointment_date = date(?)
-        date, time,       // datetime(? || ' ' || ?)
-        date, time,       // datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')
-        date, time,       // datetime(? || ' ' || ?)
-        date, time        // datetime(? || ' ' || ?, '+' || S2.duration_minutes || ' minutes')
-      ]
-    );
-
-    // Step 2: Return error if conflict found
-    if (existing) {
+    if (overlapError) throw overlapError;
+    if (existing && existing.length > 0) {
       return res.status(400).json({ error: 'That appointment slot has already been booked.' });
     }
 
-    // Step 3: Insert new appointment
-    const result = await db.run(
-      `
-      INSERT INTO appointments 
-        (name, user_number, service_id, appointment_date, appointment_time, status) 
-      VALUES (?, ?, ?, ?, ?, 'Awaiting Confirmation')
-      `,
-      [name, user_number, serviceId, date, time]
-    );
+    // Create new appointment
+    const { error: insertError } = await supabase
+      .from('appointments')
+      .insert({
+        name,
+        user_number,
+        service_id: serviceId,
+        appointment_date: date,
+        appointment_time: time,
+        status: 'Awaiting Confirmation',
+      });
 
-    res.status(201).json({ id: result.lastID, message: 'Appointment created successfully.' });
+    if (insertError) throw insertError;
 
+    res.status(201).json({ message: 'Appointment created successfully.' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error creating appointment:", error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
-
-// update an appointment to confirmed
-
-
 
 
 
 // Functions for the ownwer to manage appointments
 // get all upcoming appointments
-app.get('/upcoming/appointments', async (req, res) => {
-  const appts = await db.all(
-    `SELECT 
-      A.id,
-      A.name,
-      A.user_number,
-      A.appointment_date,
-      time(A.appointment_time) AS StartTime,
-      time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) AS EndTime,
-      datetime(A.appointment_date || ' ' || A.appointment_time) AS appointment_start,
-      datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appointment_end,
-      A.status,
-      S.name AS service_name,
-      S.price,
-      S.duration_minutes,
-      A.created_at,
-      datetime('now') AS current_time
-    FROM appointments AS A
-    INNER JOIN services AS S
-      ON A.service_id = S.id
-    WHERE A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation'
+// app.get('/upcoming/appointments', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT 
+//       A.id,
+//       A.name,
+//       A.user_number,
+//       A.appointment_date,
+//       time(A.appointment_time) AS StartTime,
+//       time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) AS EndTime,
+//       datetime(A.appointment_date || ' ' || A.appointment_time) AS appointment_start,
+//       datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appointment_end,
+//       A.status,
+//       S.name AS service_name,
+//       S.price,
+//       S.duration_minutes,
+//       A.created_at,
+//       datetime('now') AS current_time
+//     FROM appointments AS A
+//     INNER JOIN services AS S
+//       ON A.service_id = S.id
+//     WHERE A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation'
      
-    ORDER BY 
-      A.appointment_date, 
-      A.appointment_time ASC;`);
-      res.json(appts);
+//     ORDER BY 
+//       A.appointment_date, 
+//       A.appointment_time ASC;`);
+//       res.json(appts);
+// });
+
+app.get('/upcoming/appointments', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('upcoming_appointments')
+      .select('*')
+      .order('appointment_date', { ascending: true })
+      .order('appointment_time', { ascending: true });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 // get all upcoming appointments for the curent day
-app.get('/today/appointments/', async (req, res) => {
-  const appts = await db.all(
-    `SELECT 
-      A.id,
-      A.name,
-      A.user_number,
-      A.appointment_date,
-      time(A.appointment_time) AS StartTime,
-      time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) EndTime,
-      datetime(A.appointment_date || ' ' || A.appointment_time) AS appoinment_start,
-      datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appoitment_end,
-      A.status,
-      S.name AS service_name,
-      S.price,
-      S.duration_minutes,
-      A.created_at,
-      datetime('now') AS current_time
-    FROM appointments AS A
-    INNER JOIN services AS S
-      ON A.service_id = S.id
-    WHERE A.appointment_date = date('now')
-      AND EndTime >= time('now') 
-      AND (A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation')
-    ORDER BY A.appointment_date, A.appointment_time ASC;`);
-  res.json(appts);
+// app.get('/today/appointments/', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT 
+//       A.id,
+//       A.name,
+//       A.user_number,
+//       A.appointment_date,
+//       time(A.appointment_time) AS StartTime,
+//       time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) EndTime,
+//       datetime(A.appointment_date || ' ' || A.appointment_time) AS appoinment_start,
+//       datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appoitment_end,
+//       A.status,
+//       S.name AS service_name,
+//       S.price,
+//       S.duration_minutes,
+//       A.created_at,
+//       datetime('now') AS current_time
+//     FROM appointments AS A
+//     INNER JOIN services AS S
+//       ON A.service_id = S.id
+//     WHERE A.appointment_date = date('now')
+//       AND EndTime >= time('now') 
+//       AND (A.status = 'Confirmed' OR A.status = 'Awaiting Confirmation')
+//     ORDER BY A.appointment_date, A.appointment_time ASC;`);
+//   res.json(appts);
+// });
+
+app.get('/today/appointments', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('today_appointments')
+      .select('*')
+      .order('appointment_date', { ascending: true })
+      .order('appointment_time', { ascending: true });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching today's appointments:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 // get all the appointments from the current month
-app.get('/month/appointments', async (req, res) => {
-  const appts = await db.all(
-    `SELECT 
-      A.id,
-      A.name,
-      A.user_number,
-      A.appointment_date,
-      time(A.appointment_time) AS StartTime,
-      time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) AS EndTime,
-      datetime(A.appointment_date || ' ' || A.appointment_time) AS appointment_start,
-      datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appointment_end,
-      A.status,
-      S.name AS service_name,
-      S.price,
-      S.duration_minutes,
-      A.created_at,
-      datetime('now') AS current_time
-    FROM appointments AS A
-    INNER JOIN services AS S
-      ON A.service_id = S.id
-    WHERE 
-      strftime('%Y-%m', A.appointment_date) = strftime('%Y-%m', 'now')
+// app.get('/month/appointments', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT 
+//       A.id,
+//       A.name,
+//       A.user_number,
+//       A.appointment_date,
+//       time(A.appointment_time) AS StartTime,
+//       time(datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes')) AS EndTime,
+//       datetime(A.appointment_date || ' ' || A.appointment_time) AS appointment_start,
+//       datetime(A.appointment_date || ' ' || A.appointment_time, '+' || S.duration_minutes || ' minutes') AS appointment_end,
+//       A.status,
+//       S.name AS service_name,
+//       S.price,
+//       S.duration_minutes,
+//       A.created_at,
+//       datetime('now') AS current_time
+//     FROM appointments AS A
+//     INNER JOIN services AS S
+//       ON A.service_id = S.id
+//     WHERE 
+//       strftime('%Y-%m', A.appointment_date) = strftime('%Y-%m', 'now')
       
-    ORDER BY 
-      A.appointment_date, 
-      A.appointment_time ASC;
-`);
-  res.json(appts);
-});
+//     ORDER BY 
+//       A.appointment_date, 
+//       A.appointment_time ASC;
+// `);
+//   res.json(appts);
+// });
 
+app.get('/month/appointments', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('month_appointments')
+      .select('*')
+      .order('appointment_date', { ascending: true })
+      .order('appointment_time', { ascending: true });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching month's appointments:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 // get popular services for the current month
+// app.get('/month/appointments/popular', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT s.name AS service_name, COUNT(a.id) AS total_bookings
+//       FROM appointments a
+//       JOIN services s ON a.service_id = s.id
+//       WHERE strftime('%Y-%m', a.appointment_date) = strftime('%Y-%m', 'now')
+//       GROUP BY a.service_id
+//       ORDER BY total_bookings DESC;
+// `);
+//   res.json(appts);
+// });
+
 app.get('/month/appointments/popular', async (req, res) => {
-  const appts = await db.all(
-    `SELECT s.name AS service_name, COUNT(a.id) AS total_bookings
-      FROM appointments a
-      JOIN services s ON a.service_id = s.id
-      WHERE strftime('%Y-%m', a.appointment_date) = strftime('%Y-%m', 'now')
-      GROUP BY a.service_id
-      ORDER BY total_bookings DESC;
-`);
-  res.json(appts);
+  try {
+    const { data, error } = await supabase
+      .from('month_appointments_popular')
+      .select('*')
+      .order('total_bookings', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching popular services:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 
 // get all the appointments from the current month
+// app.get('/month/appointments/repeat-users', async (req, res) => {
+//   const appts = await db.all(
+//     `SELECT user_number, name, COUNT(*) AS appointment_count
+//     FROM appointments
+//     WHERE strftime('%Y-%m', appointment_date) = strftime('%Y-%m', 'now')
+//       AND status = 'Completed'
+//       AND appointment_date <= date('now')
+//     GROUP BY user_number, name
+//     HAVING COUNT(*) > 1
+//     ORDER BY appointment_count DESC;
+// `);
+//   res.json(appts);
+// });
+
 app.get('/month/appointments/repeat-users', async (req, res) => {
-  const appts = await db.all(
-    `SELECT user_number, name, COUNT(*) AS appointment_count
-    FROM appointments
-    WHERE strftime('%Y-%m', appointment_date) = strftime('%Y-%m', 'now')
-      AND status = 'Completed'
-      AND appointment_date <= date('now')
-    GROUP BY user_number, name
-    HAVING COUNT(*) > 1
-    ORDER BY appointment_count DESC;
-`);
-  res.json(appts);
+  try {
+    const { data, error } = await supabase
+      .from('month_appointments_repeat_users')
+      .select('*')
+      .order('appointment_count', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching repeat users:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
 
 //update appointement to completed
+// app.post('/complete', async (req, res) => {
+//   const { user, appointmentId } = req.body;
+//   const result = await db.run(
+//     `UPDATE appointments
+//      SET Status = 'Completed'
+//      WHERE user_number = ? AND id = ?;
+//      `,
+//     user, appointmentId
+//   );
+//   res.status(201).json({ id: result.lastID });
+// });
 app.post('/complete', async (req, res) => {
   const { user, appointmentId } = req.body;
-  const result = await db.run(
-    `UPDATE appointments
-     SET Status = 'Completed'
-     WHERE user_number = ? AND id = ?;
-     `,
-    user, appointmentId
-  );
-  res.status(201).json({ id: result.lastID });
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'Completed' })
+      .eq('user_number', user)
+      .eq('id', appointmentId);
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Appointment marked as completed.' });
+  } catch (error) {
+    console.error("Error completing appointment:", error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
 });
+
 
 // update an appointment to cancelled
+// app.post('/cancel', async (req, res) => {
+//   const { user, appointmentId } = req.body;
+//   const result = await db.run(
+//     `UPDATE appointments
+//      SET Status = 'Cancelled'
+//      WHERE user_number = ? AND id = ?;
+//      `,
+//     user, appointmentId
+//   );
+//   res.status(201).json({ id: result.lastID });
+// });
+
 app.post('/cancel', async (req, res) => {
   const { user, appointmentId } = req.body;
-  const result = await db.run(
-    `UPDATE appointments
-     SET Status = 'Cancelled'
-     WHERE user_number = ? AND id = ?;
-     `,
-    user, appointmentId
-  );
-  res.status(201).json({ id: result.lastID });
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'Cancelled' })
+      .eq('user_number', user)
+      .eq('id', appointmentId);
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Appointment marked as Cancelled.' });
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
 });
 
+// app.post('/confirm', async (req, res) => {
+//   const { user, appointmentId } = req.body;
+//   const result = await db.run(
+//     `UPDATE appointments
+//      SET Status = 'Confirmed'
+//      WHERE user_number = ? AND id = ?;
+//      `,
+//     user, appointmentId
+//   );
+//   res.status(201).json({ id: result.lastID });
+// });
 
 app.post('/confirm', async (req, res) => {
   const { user, appointmentId } = req.body;
-  const result = await db.run(
-    `UPDATE appointments
-     SET Status = 'Confirmed'
-     WHERE user_number = ? AND id = ?;
-     `,
-    user, appointmentId
-  );
-  res.status(201).json({ id: result.lastID });
+
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'Confirmed' })
+      .eq('user_number', user)
+      .eq('id', appointmentId);
+
+    if (error) throw error;
+
+    res.status(201).json({ message: 'Appointment marked as Confirmed.' });
+  } catch (error) {
+    console.error("Error confirming appointment:", error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
 });
+
 //block certian time slots for various reasons
 
 // have a list of available time slots for the user to choose from
