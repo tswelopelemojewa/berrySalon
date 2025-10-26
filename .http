@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:3000
-@token = EAAUDMz1TlqUBP0HG5ZBqh79rDJs4ZCzSU6EHvUJGUmsPSjZCKxLTbO9r7aZADHZBO40lftyhZBNGNDfbpZALaX9N8zPEK3jyqRw417LZC0AuZBcXv3ZCocl8U9LdxhqBSmmZBXmu0LJmKAOzkRrM0lZAJzmrRyurn2ZA2QjCtvRzZCAq6OtF6HeHiYWhh76r4VAauqkfLfpkwKVQ4akXeAbXSDbcZAihOQnt4bMTcFQ3s4L9kwYZCwjY7KpDKWxNXZBNd6tFJ2585ASphcTjaAaR8kvhdLaS0ZBPj2bqeKKlEGLAZDZD
+@token = EAAUDMz1TlqUBP1n4X0GlRlYZAxp1rKeNp1exAF5j7s9dZB6kTinnj3Bh4bhPDVBlBqZBipzZArqhXpPZBNcARARVS2yLJ9CN9wMQ4dSCM88W0FuKXnPdvJR23RoIW1ftGYtz5FIAJFyUMRyKWZAJG0CGJtZAHdbqtJHYhZA9bmnwU0e4SUAfot9OGquB3ZALLjjGHtOjtaadqZBYw61Aaj2itqkJ4B2xZCyUP2Ki0dZBTSR0tdCXA2tMczKLvrbU2s3JzDxdlvKVbSlphTD1Ld9RGIK12Cd1npzG3Ql4fwZDZD
 @phoneId = 743581855509318 
 #726909047167471
 @to = 27790985214
@@ -36,7 +36,7 @@ Content-Type: application/json
 
 ####
 # ➤ Simulate incoming message webhook
-POST http://localhost:3000/webhook/ HTTP/1.1
+POST http://localhost:3000/webhook HTTP/1.1
 Content-Type: application/json
 
 {
@@ -99,7 +99,10 @@ Authorization: Bearer {{token}}
 
 
 ###
-GET https://berrysalon.onrender.com/services
+GET http://localhost:3000/users
+
+####
+GET http://localhost:3000/services
 
 ###
 GET https://berrysalon.onrender.com/services/1

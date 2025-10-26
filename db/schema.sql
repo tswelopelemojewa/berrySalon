@@ -21,18 +21,7 @@ CREATE TABLE IF NOT EXISTS operating_hours (
 );
 
 -- appointments: booked slots
-CREATE TABLE IF NOT EXISTS appointments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  user_number TEXT NOT NULL,
-  service_id INTEGER NOT NULL,
-  appointment_date TEXT NOT NULL,  -- stored as ISO string (YYYY-MM-DD)
-  appointment_time TEXT NOT NULL,  -- stored as HH:MM (24-hour)
-  status TEXT NOT NULL DEFAULT 'Awaiting Confirmation' 
-      CHECK(status IN ('Awaiting Confirmation', 'Confirmed', 'Completed', 'Cancelled')),
-  created_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
-);
+2
 -- DROP TABLE IF EXISTS appointments;
 
 

@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import { handleIncoming } from './handler.js';
 // import { handleIncoming } from './Sender1.js';
-import { initDb } from './db.js';
+import { supabase } from './db.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -24,6 +24,29 @@ app.use(
   })
 );
 
+// let db;
+// initDb().then(dbHandle => { db = dbHandle });
+
+// get all the services from the database
+// app.get('/services', async (req, res) => {
+//   const items = await db.all('SELECT * FROM services');
+//   res.json(items);
+// });
+
+// ✅ GET all services from Supabase
+app.get('/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('users').select('*')
+
+    if (error) throw error
+    res.json(data)
+  } catch (err) {
+    console.error('Error fetching users:', err)
+    res.status(500).json({ error: 'Failed to fetch users' })
+  }
+})
+
+
 // Meta Webhook verification
 app.get('/webhook', (req, res) => {
     const token = process.env.VERIFY_TOKEN;
@@ -42,8 +65,6 @@ app.get('/webhook', (req, res) => {
 app.post('/webhook', handleIncoming);
 
 
-let db;
-initDb().then(dbHandle => { db = dbHandle });
 
 
 // setup storage
@@ -64,52 +85,138 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // get all the services from the database
-app.get('/services', async (req, res) => {
-  const items = await db.all('SELECT * FROM services');
-  res.json(items);
-});
+// app.get('/services', async (req, res) => {
+//   const items = await db.all('SELECT * FROM services');
+//   res.json(items);
+// });
 
-//Create a new service
+// ✅ GET all services from Supabase
+app.get('/services', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('services').select('*')
+
+    if (error) throw error
+    res.json(data)
+  } catch (err) {
+    console.error('Error fetching services:', err)
+    res.status(500).json({ error: 'Failed to fetch services' })
+  }
+})
+
+// //Create a new service
+// app.post('/services/add', upload.single('coverImg'), async (req, res) => {
+//   try {
+//     if (!db) {
+//       return res.status(500).json({ message: "Database not initialized yet." });
+//     }
+//     const { name, Price, duration_minutes } = req.body;
+//     const coverImg = req.file ? `uploads/${req.file.filename}` : null;
+//     const result = await db.run(
+//       `INSERT INTO services (name, Price, duration_minutes, coverImg) VALUES (?, ?, ?, ?);`,
+//       [name, Price, duration_minutes, coverImg]
+//     );
+//     res.status(201).json({ id: result.lastID, name, Price, duration_minutes, coverImg });
+//   } catch (error) {
+//     console.error("Error creating service:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// Create a new service (Supabase + local image)
 app.post('/services/add', upload.single('coverImg'), async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ message: "Database not initialized yet." });
-    }
-    const { name, Price, duration_minutes } = req.body;
-    const coverImg = req.file ? `uploads/${req.file.filename}` : null;
-    const result = await db.run(
-      `INSERT INTO services (name, Price, duration_minutes, coverImg) VALUES (?, ?, ?, ?);`,
-      [name, Price, duration_minutes, coverImg]
-    );
-    res.status(201).json({ id: result.lastID, name, Price, duration_minutes, coverImg });
-  } catch (error) {
-    console.error("Error creating service:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+    const { name, Price, duration_minutes } = req.body
+    const coverImg = req.file ? `uploads/${req.file.filename}` : null
 
-// get all the services for a specific service
+    // ✅ Insert into Supabase
+    const { data, error } = await supabase
+      .from('services')
+      .insert([{ name, Price, duration_minutes, coverImg }])
+      .select()
+
+    if (error) throw error
+
+    res.status(201).json({
+      message: 'Service created successfully',
+      service: data[0],
+    })
+  } catch (error) {
+    console.error('Error creating service:', error)
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+})
+
+
+// // get all the services for a specific service
+// app.get('/services/:id', async (req, res) => {
+//   const items = await db.all(`
+//     SELECT 
+//       G.Id, G.Service_Id, IFNULL(G.Image, S.coverImg) AS Image,
+//       S.name, S.Price, S.duration_minutes, S.coverImg
+//     FROM services AS S
+//     LEFT JOIN gallery AS G
+//       ON G.Service_Id = S.Id
+//     WHERE S.id = ?
+//     ORDER BY G.Id DESC`, req.params.id);
+//   res.json(items);
+// });
+
 app.get('/services/:id', async (req, res) => {
-  const items = await db.all(`
-    SELECT 
-      G.Id, G.Service_Id, IFNULL(G.Image, S.coverImg) AS Image,
-      S.name, S.Price, S.duration_minutes, S.coverImg
-    FROM services AS S
-    LEFT JOIN gallery AS G
-      ON G.Service_Id = S.Id
-    WHERE S.id = ?
-    ORDER BY G.Id DESC`, req.params.id);
-  res.json(items);
-});
+  try {
+    const { id } = req.params
+    const { data, error } = await supabase
+      .from('service_gallery_view')
+      .select('*')
+      .eq('service_id', id)
+
+    if (error) throw error
+    res.json(data)
+  } catch (error) {
+    console.error('Error fetching service details:', error)
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+})
+
+
 
 // Add more images into the gallery for a specific service
 //update appointement to completed
+// app.post("/services/:id/add", upload.array("images"), async (req, res) => {
+//   try {
+//     if (!db) {
+//       return res.status(500).json({ message: "Database not initialized yet." });
+//     }
+
+//     const service_Id = req.params.id;
+//     const uploadedFiles = req.files;
+
+//     if (!uploadedFiles || uploadedFiles.length === 0) {
+//       return res.status(400).json({ message: "No files uploaded" });
+//     }
+
+//     const insertPromises = uploadedFiles.map(async (file) => {
+//       const filePath = `uploads/${file.filename}`;
+//       const result = await db.run(
+//         `INSERT INTO gallery (service_Id, Image) VALUES (?, ?);`,
+//         [service_Id, filePath]
+//       );
+//       return { id: result.lastID, service_Id, Image: filePath };
+//     });
+
+//     const savedImages = await Promise.all(insertPromises);
+
+//     res.status(201).json({
+//       message: "Images uploaded successfully",
+//       uploaded: savedImages,
+//     });
+//   } catch (error) {
+//     console.error("Error saving images:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
 app.post("/services/:id/add", upload.array("images"), async (req, res) => {
   try {
-    if (!db) {
-      return res.status(500).json({ message: "Database not initialized yet." });
-    }
-
     const service_Id = req.params.id;
     const uploadedFiles = req.files;
 
@@ -118,12 +225,25 @@ app.post("/services/:id/add", upload.array("images"), async (req, res) => {
     }
 
     const insertPromises = uploadedFiles.map(async (file) => {
-      const filePath = `uploads/${file.filename}`;
-      const result = await db.run(
-        `INSERT INTO gallery (service_Id, Image) VALUES (?, ?);`,
-        [service_Id, filePath]
-      );
-      return { id: result.lastID, service_Id, Image: filePath };
+      const fileName = `${Date.now()}_${file.originalname}`;
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from("gallery")
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      if (storageError) throw storageError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("gallery")
+        .getPublicUrl(fileName);
+
+      const { data: dbData, error: dbError } = await supabase
+        .from("gallery")
+        .insert([{ service_Id, Image: publicUrlData.publicUrl }])
+        .select();
+
+      if (dbError) throw dbError;
+
+      return dbData[0];
     });
 
     const savedImages = await Promise.all(insertPromises);
@@ -137,8 +257,6 @@ app.post("/services/:id/add", upload.array("images"), async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
-
-
 
 app.get('/hours/:dow', async (req, res) => {
   const dow = parseInt(req.params.dow);
