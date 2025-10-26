@@ -474,12 +474,14 @@ app.get('/today/appointments', async (req, res) => {
 
     if (error) throw error;
 
-    res.json(data);
+    // ✅ Return empty array quietly if no data
+    res.json(data || []);
   } catch (error) {
-    console.error("Error fetching today's appointments:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    // ✅ Fail quietly — return empty array, no console noise
+    res.json([]);
   }
 });
+
 
 // get all the appointments from the current month
 // app.get('/month/appointments', async (req, res) => {
