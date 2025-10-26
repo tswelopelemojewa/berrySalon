@@ -168,6 +168,8 @@ app.get('/services/:id', async (req, res) => {
       .from('service_gallery_view')
       .select('*')
       .eq('service_id', id)
+      
+      console.log('Service Id: ', id)
 
     if (error) throw error
     res.json(data)
