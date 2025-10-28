@@ -209,6 +209,86 @@ app.get('/services/:id', async (req, res) => {
 })
 
 
+// app.js
+
+// ✅ UPDATE a service by ID (PUT)
+app.put('/services/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Destructure only the updatable fields from the request body
+        const { name, Price, duration_minutes } = req.body; 
+
+        // Optional: You might need to handle coverImg updates separately if they involve a file upload
+        // For simplicity, this assumes coverImg is updated via a separate file-upload endpoint 
+        // or that it's not being updated in this request.
+
+        // Construct the update object with only provided fields
+        const updates = {};
+        if (name !== undefined) updates.name = name;
+        if (Price !== undefined) updates.Price = Price;
+        if (duration_minutes !== undefined) updates.duration_minutes = duration_minutes;
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: "No fields provided for update." });
+        }
+
+        const { data, error } = await supabase
+            .from('services')
+            .update(updates) // Apply the updates
+            .eq('id', id)    // Target the specific service ID
+            .select();       // Return the updated row
+
+        if (error) throw error;
+        
+        // Check if a row was actually updated
+        if (!data || data.length === 0) {
+            return res.status(404).json({ message: "Service not found." });
+        }
+
+        res.json({ 
+            message: `Service ID ${id} updated successfully.`,
+            updated_service: data[0]
+        });
+
+    } catch (error) {
+        console.error('Error updating service:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// app.js
+
+// ✅ DELETE a service by ID (DELETE)
+app.delete('/services/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // NOTE: If you have a foreign key constraint set up (which you should), 
+        // deleting the service might fail if there are still records in the 
+        // 'gallery' or 'appointments' tables linked to this service ID. 
+        // You would need to handle those dependencies first (e.g., set to NULL or delete them).
+        
+        const { error, count } = await supabase
+            .from('services')
+            .delete()
+            .eq('id', id)
+            .select(); // Use select() to get the number of deleted rows if needed
+
+        if (error) throw error;
+
+        // The count property is not reliably available in the standard JS client, 
+        // so checking for error is the main indicator of success/failure.
+        
+        res.status(200).json({ 
+            message: `Service ID ${id} and all related data deleted successfully.`
+        });
+
+    } catch (error) {
+        console.error('Error deleting service:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 // Assuming 'app' is your Express app instance and 'supabase' is your Supabase client initialized earlier.
 
 app.delete('/gallery/:imageId', async (req, res) => {
