@@ -167,6 +167,8 @@ app.post('/services/add', upload.single('coverImg'), async (req, res) => {
       message: 'Service created successfully',
       service: data[0],
     });
+
+    console.log('Service created:', data[0]);
   } catch (error) {
     console.error('Error creating service:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
