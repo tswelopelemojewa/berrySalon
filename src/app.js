@@ -97,6 +97,8 @@ app.get('/services', async (req, res) => {
   }
 })
 
+
+
 // //Create a new service
 // app.post('/services/add', upload.single('coverImg'), async (req, res) => {
 //   try {
@@ -172,6 +174,66 @@ app.get('/services/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
+
+
+// Assuming 'app' is your Express app instance and 'supabase' is your Supabase client initialized earlier.
+
+app.delete('/gallery/:imageId', async (req, res) => {
+    const { imageId } = req.params;
+
+    try {
+        // --- 1. Fetch the image URL/path for Storage deletion ---
+        // This is necessary because Supabase delete on the DB table doesn't automatically delete the file.
+        const { data: imageDetails, error: fetchError } = await supabase
+            .from('gallery')
+            .select('image_path') // Assuming you store the storage path in a column named 'image_path'
+            .eq('id', imageId)
+            .single();
+
+        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means "No rows found"
+            throw fetchError;
+        }
+
+        let storagePath = null;
+        if (imageDetails && imageDetails.image_path) {
+            storagePath = imageDetails.image_path;
+        }
+
+        // --- 2. Delete the record from the 'gallery' table ---
+        const { error: dbError } = await supabase
+            .from('gallery')
+            .delete()
+            .eq('id', imageId);
+
+        if (dbError) throw dbError;
+
+        // --- 3. Delete the file from Supabase Storage (if path was found) ---
+        if (storagePath) {
+            // Assuming your bucket is named 'gallery_images'
+            const bucketName = 'gallery_images'; 
+            
+            // Delete the file using the path stored in the database
+            const { error: storageError } = await supabase.storage
+                .from(bucketName)
+                .remove([storagePath]); 
+
+            if (storageError) {
+                // IMPORTANT: Log the storage error but don't fail the response,
+                // as the database record is already gone.
+                console.warn(`Warning: Could not delete file from storage at path: ${storagePath}`, storageError);
+            }
+        }
+
+        // --- 4. Success Response ---
+        res.status(200).json({ message: 'Image deleted successfully' });
+
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        // Send a 500 response if anything critical (like DB delete) fails
+        res.status(500).json({ message: 'Server error while deleting image', error: error.message });
+    }
+});
+
 
 
 
