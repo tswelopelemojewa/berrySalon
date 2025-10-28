@@ -105,7 +105,7 @@ GET http://localhost:3000/users
 GET http://localhost:3000/services
 
 ###
-GET https://berrysalon.onrender.com/services/1
+GET http://localhost:3000/services/1
 
 
 

@@ -161,7 +161,7 @@ app.get('/services/:id', async (req, res) => {
     const { data, error } = await supabase
       .from('service_gallery_view')
       .select('*')
-      .eq('service_id', id)
+      .eq('service_Id', id)
       
       console.log('Service Id: ', id)
 
