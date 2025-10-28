@@ -186,7 +186,7 @@ app.delete('/gallery/:imageId', async (req, res) => {
         // This is necessary because Supabase delete on the DB table doesn't automatically delete the file.
         const { data: imageDetails, error: fetchError } = await supabase
             .from('gallery')
-            .select('image_path') // Assuming you store the storage path in a column named 'image_path'
+            .select('Image') // Assuming you store the storage path in a column named 'image_path'
             .eq('id', imageId)
             .single();
 
@@ -210,7 +210,7 @@ app.delete('/gallery/:imageId', async (req, res) => {
         // --- 3. Delete the file from Supabase Storage (if path was found) ---
         if (storagePath) {
             // Assuming your bucket is named 'gallery_images'
-            const bucketName = 'gallery_images'; 
+            const bucketName = 'gallery'; 
             
             // Delete the file using the path stored in the database
             const { error: storageError } = await supabase.storage
