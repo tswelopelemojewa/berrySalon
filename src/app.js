@@ -118,29 +118,60 @@ app.get('/services', async (req, res) => {
 //   }
 // });
 
-// Create a new service (Supabase + local image)
+// app.js (around line 110)
+
+// Create a new service (Supabase + Supabase Storage for coverImg)
 app.post('/services/add', upload.single('coverImg'), async (req, res) => {
   try {
-    const { name, Price, duration_minutes } = req.body
-    const coverImg = req.file ? `uploads/${req.file.filename}` : null
+    const { name, Price, duration_minutes } = req.body;
+    
+    let coverImgUrl = null;
 
-    // ✅ Insert into Supabase
+    if (req.file) {
+      // 1. Prepare unique and clean filename for Supabase
+      const originalName = req.file.originalname.replace(/\s/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+      const fileName = `cover_${Date.now()}_${originalName}`;
+      
+      // 2. Upload to the 'services' bucket (using req.file.buffer)
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from("services") // <-- NEW BUCKET NAME: 'services'
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+        });
+
+      if (storageError) throw storageError;
+
+      // 3. Get the public URL for the uploaded file
+      const { data: publicUrlData } = supabase.storage
+        .from("services")
+        .getPublicUrl(fileName);
+        
+      coverImgUrl = publicUrlData.publicUrl; // Store the full URL
+    }
+
+    // 4. Insert service data with the public image URL
     const { data, error } = await supabase
       .from('services')
-      .insert([{ name, Price, duration_minutes, coverImg }])
-      .select()
+      .insert([{ 
+        name, 
+        Price, 
+        duration_minutes, 
+        coverImg: coverImgUrl // <-- Saving the Supabase URL
+      }])
+      .select();
 
     if (error) throw error
 
     res.status(201).json({
       message: 'Service created successfully',
       service: data[0],
-    })
+    });
   } catch (error) {
-    console.error('Error creating service:', error)
-    res.status(500).json({ message: 'Server error', error: error.message })
+    console.error('Error creating service:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-})
+});
 
 
 // // get all the services for a specific service
