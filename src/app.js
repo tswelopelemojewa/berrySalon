@@ -34,27 +34,46 @@ app.use(
   })
 );
 
-// let db;
-// initDb().then(dbHandle => { db = dbHandle });
 
-// get all the services from the database
-// app.get('/services', async (req, res) => {
-//   const items = await db.all('SELECT * FROM services');
-//   res.json(items);
-// });
+// Middleware to verify signature (Your existing working function)
+function verifySignature(req, res, next) {
+    const signatureHeader = req.header('X-Hub-Signature-256');
+    const expectedPrefix = 'sha256=';
+    
+    if (!signatureHeader || !signatureHeader.startsWith(expectedPrefix)) {
+        console.warn('Missing or invalid signature header');
+        return res.sendStatus(401);
+    }
 
-// ✅ GET all services from Supabase
-app.get('/users', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('users').select('*')
+    const receivedSignatureHex = signatureHeader.slice(expectedPrefix.length);
+    const rawBodyBuffer = req.rawBody;
+    
+    // Safety check for rawBodyBuffer
+    if (!rawBodyBuffer || !APP_SECRET) {
+        console.error('❌ APP_SECRET or raw body is missing.');
+        return res.sendStatus(500);
+    }
 
-    if (error) throw error
-    res.json(data)
-  } catch (err) {
-    console.error('Error fetching users:', err)
-    res.status(500).json({ error: 'Failed to fetch users' })
-  }
-})
+    const hmac = crypto.createHmac('sha256', APP_SECRET);
+    hmac.update(rawBodyBuffer);
+    const computedDigestHex = hmac.digest('hex');
+
+    try {
+        const bufSig = Buffer.from(receivedSignatureHex, 'hex');
+        const bufDigest = Buffer.from(computedDigestHex, 'hex');
+
+        if (bufSig.length !== bufDigest.length || !crypto.timingSafeEqual(bufSig, bufDigest)) {
+            console.warn('Signature did not match');
+            return res.sendStatus(401);
+        }
+    } catch(err) {
+        console.error('Error during signature comparison', err);
+        return res.sendStatus(401);
+    }
+
+    console.log('✅ Signature verification passed');
+    next();
+}
 
 
 // Meta Webhook verification
@@ -74,6 +93,29 @@ app.get('/webhook', (req, res) => {
 // Webhook to receive messages
 app.post('/webhook', handleIncoming);
 
+
+
+
+// =========================================================================================================================================================================
+
+// get all the services from the database
+// app.get('/services', async (req, res) => {
+//   const items = await db.all('SELECT * FROM services');
+//   res.json(items);
+// });
+
+// ✅ GET all services from Supabase
+app.get('/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('users').select('*')
+
+    if (error) throw error
+    res.json(data)
+  } catch (err) {
+    console.error('Error fetching users:', err)
+    res.status(500).json({ error: 'Failed to fetch users' })
+  }
+})
 
 
 

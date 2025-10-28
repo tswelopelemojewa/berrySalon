@@ -40,7 +40,11 @@ import axios from 'axios';
 
 //module.exports = { sendTextMessage }; 
 
-
+/**
+ * Sends a text message back to a user via the WhatsApp Cloud API.
+ * @param {string} to - The recipient's WhatsApp ID (wa_id).
+ * @param {string} messageText - The text content of the message.
+ */
 
 export const sendTextMessage = async (to, message) => {
     // Safety checks
