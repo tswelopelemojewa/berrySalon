@@ -6,13 +6,23 @@ import { handleIncoming } from './handler.js';
 // import { handleIncoming } from './Sender1.js';
 import { supabase } from './db.js';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+// import path from 'path';
+// import fs from 'fs';
 
 const app = express();
 app.use(bodyParser.json());
 
-app.use('/uploads', express.static('uploads'));
+// app.use('/uploads', express.static('uploads'));
+// const upload = multer({ storage: storage });
+// 1. Use memory storage
+const storage = multer.memoryStorage(); 
+
+// 2. Define the upload middleware using memory storage
+const upload = multer({ 
+    storage: storage,
+    // Optional: you can remove this if you don't need a file size limit
+    limits: { fileSize: 5 * 1024 * 1024 } 
+});
 
 
 // ✅ Enable CORS for your frontend
@@ -67,22 +77,6 @@ app.post('/webhook', handleIncoming);
 
 
 
-// setup storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = "uploads/";
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-
-const upload = multer({ storage: storage });
 
 // get all the services from the database
 // app.get('/services', async (req, res) => {
@@ -217,6 +211,22 @@ app.get('/services/:id', async (req, res) => {
 //   }
 // });
 
+// setup storage
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = "uploads/";
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir);
+//     }
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + path.extname(file.originalname));
+//   },
+// });
+
+
+
 app.post("/services/:id/add", upload.array("images"), async (req, res) => {
   try {
     const service_Id = req.params.id;
@@ -227,7 +237,10 @@ app.post("/services/:id/add", upload.array("images"), async (req, res) => {
     }
 
     const insertPromises = uploadedFiles.map(async (file) => {
-      const fileName = `${Date.now()}_${file.originalname}`;
+      // const fileName = `${Date.now()}_${file.originalname}`;
+      const originalName = file.originalname.replace(/\s/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+      const fileName = `${Date.now()}_${originalName}`;
+
       const { data: storageData, error: storageError } = await supabase.storage
         .from("gallery")
         .upload(fileName, file.buffer, { contentType: file.mimetype });
