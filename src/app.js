@@ -227,38 +227,70 @@ app.get('/services/editing/:id', async (req, res) => {
 })
 
 
-// app.js
+// app.js (Update Service Route)
 
-// ✅ UPDATE a service by ID (PUT)
-app.put('/services/:id', async (req, res) => {
+app.put('/services/:id', upload.single('coverImg'), async (req, res) => {
     try {
         const { id } = req.params;
-        // Destructure only the updatable fields from the request body
+        
+        // Multer populates req.body with text fields
         const { name, Price, duration_minutes } = req.body; 
-
-        // Optional: You might need to handle coverImg updates separately if they involve a file upload
-        // For simplicity, this assumes coverImg is updated via a separate file-upload endpoint 
-        // or that it's not being updated in this request.
-
-        // Construct the update object with only provided fields
+        
+        // Start the updates object
         const updates = {};
+        let coverImgUrl = null;
+
+        // 1. Handle file upload if a NEW file was provided (req.file is set by Multer)
+        if (req.file) {
+            // Prepare unique and clean filename
+            const originalName = req.file.originalname.replace(/\s/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+            const fileName = `cover_${Date.now()}_${originalName}`;
+            
+            // Upload the new file to the 'services' bucket
+            const { error: storageError } = await supabase.storage
+                .from("services")
+                .upload(fileName, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false,
+                });
+
+            if (storageError) throw storageError;
+
+            // Get the public URL for the newly uploaded file
+            const { data: publicUrlData } = supabase.storage
+                .from("services")
+                .getPublicUrl(fileName);
+                
+            coverImgUrl = publicUrlData.publicUrl;
+            
+            // NOTE ON CLEANUP: If you want to delete the OLD image from the bucket 
+            // when a new one is uploaded, you would add that logic here (requires 
+            // fetching the old coverImg URL and parsing the file path from it first).
+        }
+
+        // 2. Add text fields to the updates object if they exist
         if (name !== undefined) updates.name = name;
         if (Price !== undefined) updates.Price = Price;
         if (duration_minutes !== undefined) updates.duration_minutes = duration_minutes;
 
-        if (Object.keys(updates).length === 0) {
-            return res.status(400).json({ message: "No fields provided for update." });
+        // 3. Add the new image URL to the updates object
+        if (coverImgUrl) {
+            updates.coverImg = coverImgUrl;
         }
 
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: "No fields or file provided for update." });
+        }
+
+        // 4. Update the Supabase database row
         const { data, error } = await supabase
             .from('services')
-            .update(updates) // Apply the updates
-            .eq('id', id)    // Target the specific service ID
-            .select();       // Return the updated row
+            .update(updates) 
+            .eq('id', id)   
+            .select();      
 
         if (error) throw error;
         
-        // Check if a row was actually updated
         if (!data || data.length === 0) {
             return res.status(404).json({ message: "Service not found." });
         }
