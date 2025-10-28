@@ -208,6 +208,24 @@ app.get('/services/:id', async (req, res) => {
   }
 })
 
+app.get('/services/editing/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { data, error } = await supabase
+      .from('services')
+      .select('*')
+      .eq('id', id)
+      
+      console.log('Service Id: ', id)
+
+    if (error) throw error
+    res.json(data)
+  } catch (error) {
+    console.error('Error fetching service details:', error)
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+})
+
 
 // app.js
 

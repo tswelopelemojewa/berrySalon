@@ -105,9 +105,11 @@ GET http://localhost:3000/users
 GET http://localhost:3000/services
 
 ###
-GET http://localhost:3000/services/1
+GET http://localhost:3000/services/editing/18
 
 
+###
+DELETE http://localhost:3000/services/17
 
 
 ###
