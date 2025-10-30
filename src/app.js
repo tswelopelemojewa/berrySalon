@@ -28,7 +28,7 @@ const upload = multer({
 // ✅ Enable CORS for your frontend
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:4173", "https://berrysalon.onrender.com", "https://berrysbeautysalon.netlify.app/",
+    origin: ["http://localhost:5173", "http://localhost:4173", "https://berrysalon.onrender.com", "https://berrysbeautysalon.netlify.app",
              "https://berrysalonweb.onrender.com"], // both local & deployed frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
