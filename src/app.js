@@ -217,6 +217,8 @@ app.get('/users', async (req, res) => {
 //   res.json(items);
 // });
 
+
+
 // ✅ GET all services from Supabase
 app.get('/services', async (req, res) => {
   try {
