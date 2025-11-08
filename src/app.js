@@ -218,7 +218,7 @@ app.get('/users', async (req, res) => {
 // });
 
 // ✅ GET all services from Supabase
-app.get('/services', adminAuth, async (req, res) => {
+app.get('/services', async (req, res) => {
   try {
     const { data, error } = await supabase.from('services').select('*')
 
