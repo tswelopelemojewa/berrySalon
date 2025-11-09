@@ -97,7 +97,7 @@ app.post('/admin/login', async (req, res) => {
     
     console.log("email: ", data.user.email);
 
-  if (data.user.email !== 'tmojewa@gmail.com') return res.status(403).json({ error: 'Yo!! Not authorized' });
+  if (data.user.email !== 'tmojewa@gmail.com') return res.status(403).json({ error: 'Hey Doll!! Sorry, Only Berry is allowed in here.😊' });
 
   res.json({ message: 'Login successful', session: data.session, user: data.user });
 
