@@ -628,7 +628,9 @@ app.post("/services/:id/add", upload.array("images"), async (req, res) => {
       uploaded: savedImages,
     });
   } catch (error) {
-    console.error("Error saving images:", error);
+    // console.error("Error saving images:", error);
+    console.error("Error saving images:", error.message, error);
+
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
